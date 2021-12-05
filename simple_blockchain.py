@@ -57,6 +57,21 @@ class PyChain:
         block = self.proof_of_work(candidate_block)
         self.chain += [block]
 
+    def is_valid(self):
+        block_hash = self.chain[0].hash_block()
+
+        for block in self.chain[1:]:
+            if block_hash != block.prev_hash:
+                print("Blockchain is invalid!")
+                return False
+
+            block_hash = block.hash_block()
+
+        print("Blockchain is Valid")
+        return True
+
+
+## Streamlit Code ##
 
 @st.cache(allow_output_mutation=True)
 def setup():
@@ -90,3 +105,6 @@ st.markdown("## PyChain Ledger")
 pychain_df = pd.DataFrame(pychain.chain)
 
 st.write(pychain_df)
+
+if st.button("Validate Blockchain"):
+    st.write(pychain.is_valid())
