@@ -5,31 +5,37 @@ import datetime as datetime
 import pandas as pd
 import hashlib
 
-# Creates the Block data class
+
+@dataclass
+class Record:
+    sender: str = ''
+    receiver: str = ''
+    amount: float = 0.00
 
 
 @dataclass
 class Block:
-    data: Any
+    record: Record
+
     creator_id: int
-    timestamp: str = datetime.datetime.utcnow().strftime("%H:%M:%S")
     prev_hash: str = 0
+    timestamp: str = datetime.datetime.utcnow().strftime("%H:%M:%S")
     nonce: str = 0
 
     def hash_block(self):
         sha = hashlib.sha256()
 
-        data = str(self.data).encode()
-        sha.update(data)
+        record = str(self.record).encode()
+        sha.update(record)
 
         creator_id = str(self.creator_id).encode()
-        sha.update(data)
-
-        prev_hash = str(self.prev_hash).encode()
-        sha.update(prev_hash)
+        sha.update(creator_id)
 
         timestamp = str(self.timestamp).encode()
         sha.update(timestamp)
+
+        prev_hash = str(self.prev_hash).encode()
+        sha.update(prev_hash)
 
         nonce = str(self.nonce).encode()
         sha.update(nonce)
@@ -43,14 +49,18 @@ class PyChain:
     difficulty: int = 4
 
     def proof_of_work(self, block):
+
         calculated_hash = block.hash_block()
-        num_of_zeros = '0' * self.difficulty
+
+        num_of_zeros = "0" * self.difficulty
 
         while not calculated_hash.startswith(num_of_zeros):
+
             block.nonce += 1
+
             calculated_hash = block.hash_block()
 
-        print("Wining Hash", calculated_hash)
+        print("Winning Hash", calculated_hash)
         return block
 
     def add_block(self, candidate_block):
@@ -70,41 +80,57 @@ class PyChain:
         print("Blockchain is Valid")
         return True
 
-
 ## Streamlit Code ##
+
+# Adds the cache decorator for Streamlit
+
 
 @st.cache(allow_output_mutation=True)
 def setup():
     print("Initializing Chain")
-    return PyChain([Block(data="Genesis", creator_id=0)])
+    return PyChain([Block("Genesis", 0)])
 
+
+st.markdown("# PyChain")
+st.markdown("## Store a Transaction Record in the PyChain")
 
 pychain = setup()
 
-st.markdown("# PyChain")
-st.markdown("## Store Data in the Chain")
-
-input_data = st.text_input("Block Data")
-
-slider_difficulty = st.slider("Blockchain Difficulty", 1, 5)
-pychain.difficulty = slider_difficulty
-
+sender = st.text_input("Your Name:")
+receiver = st.text_input("Recipient:")
+amount = st.number_input("Amount to send:")
 
 if st.button("Add Block"):
     prev_block = pychain.chain[-1]
     prev_block_hash = prev_block.hash_block()
 
-    new_block = Block(data=input_data, creator_id=42,
-                      prev_hash=prev_block_hash)
+    new_block = Block(
+        record=Record(
+            sender=sender,
+            receiver=receiver,
+            amount=amount
+        ),
+        creator_id=42,
+        prev_hash=prev_block_hash
+    )
 
     pychain.add_block(new_block)
+    st.balloons()
 
-    st.write("Winning Hash", new_block.hash_block())
+st.markdown("## The PyChain Ledger")
 
-st.markdown("## PyChain Ledger")
 pychain_df = pd.DataFrame(pychain.chain)
-
 st.write(pychain_df)
 
-if st.button("Validate Blockchain"):
+difficulty = st.sidebar.slider("Block Difficulty", 1, 5, 2)
+pychain.difficulty = difficulty
+
+st.sidebar.write("# Block Inspector")
+selected_block = st.sidebar.selectbox(
+    "Which block would you like to see?", pychain.chain
+)
+
+st.sidebar.write(selected_block)
+
+if st.button("Validate Chain"):
     st.write(pychain.is_valid())
