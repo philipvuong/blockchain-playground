@@ -4,15 +4,31 @@ from web3 import EthereumTesterProvider
 provider = EthereumTesterProvider()
 w3 = Web3(provider)
 
-latest_block = w3.eth.get_block('latest')
-print(latest_block, '\n')
-
+# access all accounts:
+# [0x##, 0x##, 0x##...]
 accounts = w3.eth.accounts
-first_account = accounts[0]
-print(accounts, '\n')
 
-wei_balance_first_account = w3.eth.get_balance(first_account)
-print(wei_balance_first_account, '\n')
+sender = accounts[0]
+receiver = accounts[1]
+print('Sender: ', sender, '\n', 'Receiver: ', receiver, '\n')
 
-ether_amt = w3.fromWei(wei_balance_first_account, 'ether')
-print(ether_amt, '\n')
+# minimum gas value:
+gas = 21000
+
+# value to send:
+value = w3.toWei(333, 'ether')
+
+# send transaction to blockchain:
+transaction = w3.eth.send_transaction({
+  'to': receiver,
+  'from': sender,
+  'gas': gas,
+  'value': value
+})
+print('Transaction: ', transaction)
+
+receipt = w3.eth.getTransactionReceipt(transaction)
+print('Receipt: ', receipt, '\n\n')
+
+latest_block = w3.eth.get_block('latest')
+print('BLOCK: ', latest_block)
